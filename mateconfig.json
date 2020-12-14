@@ -1,0 +1,46 @@
+{
+    "builds": [{
+            "name": "dev",
+            "css": {
+                "minify": false,
+                "sourceMap": true
+            },
+            "js": {
+                "minify": false,
+                "sourceMap": true,
+                "declaration": true,
+                "webClean": true
+            }
+        },
+        {
+            "name": "dist",
+            "outDir": "dist",
+            "outDirVersioning": true,
+            "outDirName": false,
+            "css": {
+                "outDirSuffix": "css",
+                "minify": true,
+                "sourceMap": false
+            },
+            "js": {
+                "minify": true,
+                "sourceMap": false,
+                "declaration": true,
+                "webClean": true
+            }
+        }
+    ],
+    "files": [{
+        "output": "test/js/cloudlocalization.js",
+        "input": [
+            "src/enums.ts",
+            "src/classes.ts",
+            "src/settings.ts",
+            "src/main.ts"
+        ],
+        "builds": ["dev", "dist"]
+    },{
+        "output": "test/js/index.js",
+        "input": "test/js/index.ts"
+    }]
+}

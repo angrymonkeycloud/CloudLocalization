@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": false,
+        "noEmitOnError": false,
+        "removeComments": true,
+        "target": "ES5",
+        "lib": ["ES2015", "DOM"],
+        "module": "ES6"
+    }
+}
