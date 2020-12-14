@@ -1,4 +1,4 @@
-# [Cloud Localization](https://angrymonkeycloud.com/localization)
+# [Cloud Localization](https://angrymonkeycloud.com/cloudlocalization)
 
 A JavaScript library to translate HTML content into multiple languages.
 
@@ -22,7 +22,7 @@ When you're done, pleae update the version under package.json and run the follow
 cloudmate dist
 ```
 
-Check out <https://angrymonkeycloud.com/localization> for more information.
+Check out <https://angrymonkeycloud.com/cloudlocalization> for more information.
 
 # Implementation
 
