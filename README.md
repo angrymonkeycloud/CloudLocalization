@@ -42,7 +42,7 @@ Cloud Localization JavaScript Compressed
 
 ```html
 <script
-  src="https://cdn.amcapi.com/localization/1.0.0/cloudlocalization.min.js"
+  src="https://cdn.amcapi.com/cloudlocalization/1.0.0/cloudlocalization.min.js"
   crossorigin="anonymous"
 ></script>
 ```
@@ -86,7 +86,7 @@ cloudLocalization({
 
 ## Predefined Languages
 
-Add predefined languages as json files under 'translation' directory. each language code should have its own file named: languageCode.json.
+Add predefined languages as json files under 'translation' directory. each language code should have its own file named: {languageCode}.json.
 
 o: Original text.
 
