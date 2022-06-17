@@ -34,7 +34,7 @@ jQuery 2.x or 3.x: [jQuery CDN](https://code.jquery.com/), [download jQuery](htt
 
 ### Download
 
-Cloud Localization JavaScript files: [Uncompressed](https://cdn.amcapi.com/localization/1.0.0/cloudlocalization.js), [Compressed](https://cdn.amcapi.com/localization/1.0.0/cloudlocalization.min.js).
+Cloud Localization JavaScript files: [Uncompressed](https://cdn.amcapi.com/localization/1.0.1/cloudlocalization.js), [Compressed](https://cdn.amcapi.com/localization/1.0.1/cloudlocalization.min.js).
 
 ### CDN
 
@@ -42,7 +42,7 @@ Cloud Localization JavaScript Compressed
 
 ```html
 <script
-  src="https://cdn.amcapi.com/localization/1.0.0/cloudlocalization.min.js"
+  src="https://cdn.amcapi.com/localization/1.0.1/cloudlocalization.min.js"
   crossorigin="anonymous"
 ></script>
 ```

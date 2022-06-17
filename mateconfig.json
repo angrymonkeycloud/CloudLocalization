@@ -31,7 +31,10 @@
         }
     ],
     "files": [{
-        "output": "test/js/cloudlocalization.js",
+        "output": [
+            "test/js/cloudlocalization.js",
+            "test/2/js/cloudlocalization.js"
+        ],
         "input": [
             "src/enums.ts",
             "src/classes.ts",

@@ -1,0 +1,49 @@
+.cloudlocalization-selectioncontainer {
+    padding: 20px;
+    background-color: #00a7ce;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.logo {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.designBox {
+    background-color: greenyellow;
+    width: 200px;
+    height: 100px;
+    padding-left: 20px;
+}
+
+.designBox>div {
+    background-color: #000;
+    width: 100%;
+    height: 100%;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: .25fr .75fr;
+    grid-template-areas: "left right";
+}
+
+.grid>div {
+    height: 40px;
+}
+
+.grid-left {
+    grid-area: left;
+    background-color: cornflowerblue;
+    color: #fff;
+    text-align: left;
+}
+
+.grid-right {
+    grid-area: right;
+    background-color: darkgreen;
+    color: #fff;
+    text-align: right;
+}

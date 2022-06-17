@@ -1,6 +1,6 @@
 {
     "name": "cloudlocalization",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "JavaScript library for translating websites into multiple languages.",
     "main": "./dist/cloudlocalization.js",
     "scripts": {

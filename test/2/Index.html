@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Cloud Localization Test Page</title>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+    <link href="css/style.css" rel="stylesheet" />
+</head>
+
+<body>
+
+    <div class="testStyle" translate="no" style="border: 10px solid #00a7ce; border-top-width: 0; border-bottom-width: 0; padding-left: 15px;">
+        Don't Translate This
+        <div translate="yes">
+            Translate This
+            <div translate="no">
+                Don't Translate This
+                <div translate="yes">
+                    Translate This
+                    <div translate="no">
+                        Don't Translate This
+                        <div>
+                            Don't Translate This
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="grid-left">Left</div>
+        <div class="grid-right">Right</div>
+    </div>
+
+    <img class="logo" title="Logo" src="../img/CloudLogo-64x64.png" />
+
+    <div class="search">
+        <input type="search" placeholder="search">
+    </div>
+
+    <button id="expandButton">Expand/Collapse</button>
+
+    <div class="designBox">
+        <div></div>
+    </div>
+
+    <h2>Text for Auto Translation</h2>
+    <div>I'm so hungry.</div>
+
+    <h2>Numbers</h2>
+    <div>1</div>
+    <div>1234567890</div>
+    <div>1 2 3 4 5 6 7 8 9 0</div>
+    <div>-123</div>
+
+    <h2>Phone Numbers</h2>
+    <div>+11231231234</div>
+    <div>+1 (123) 123 1234</div>
+    <div>+(123) 123 1234</div>
+    <div>+ ( 1 ) 2 3 4 5 6 7 8 9 0</div>
+
+    <div><a href="tel:+11231231234">(123) 123 1234</a></div>
+    <div><a href="tel:+11231231234">+ (123) 123 1234</a></div>
+
+    <h2>email</h2>
+    <div>email@domainname.com</div>
+    <a href="mailto:email@domainname.com">email@domainname.com</a>
+
+    <div class="cloudlocalization-selectioncontainer">
+        <select class="cloudlocalization-selection"></select>
+    </div>
+
+    <script src="http://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="js/cloudlocalization.js"></script>
+    <script src="js/index.js"></script>
+</body>
+
+</html>

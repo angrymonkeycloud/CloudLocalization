@@ -2,11 +2,11 @@ import { CloudLocalizationSettings } from "./settings";
 import { TranslatorProvider, UrlLanguageLocation, LanguageDirection, TranslationStatusResult } from "./enums";
 import { Translations, Language, TranslationValue, TranslationStatus } from "./classes";
 
-export class CloudLocalization{
+export class CloudLocalization {
 
-    public constructor(settings: CloudLocalizationSettings){
-        
-    CloudLocalization._settings = this.mergeSettings(settings);
+    public constructor(settings: CloudLocalizationSettings) {
+
+        CloudLocalization._settings = this.mergeSettings(settings);
 
         CloudLocalization.updateCurrentLanguage();
         CloudLocalization.fillInLanguages();
@@ -23,21 +23,21 @@ export class CloudLocalization{
             await CloudLocalization.translateDOM();
         });
     }
-    
+
     private mergeSettings(_settings: CloudLocalizationSettings): CloudLocalizationSettings {
-        const settings : CloudLocalizationSettings = {
+        const settings: CloudLocalizationSettings = {
             defaultLanguage: 'en',
             logTranslationsFromProvider: false,
-            translatorProvider: TranslatorProvider.none ,
+            translatorProvider: TranslatorProvider.none,
             translatorProviderKey: '',
             urlLanguageLocation: UrlLanguageLocation.none,
 
             languages: []
         };
 
-        for (const attrname in _settings) 
-        settings[attrname] = _settings[attrname];
-        
+        for (const attrname in _settings)
+            settings[attrname] = _settings[attrname];
+
         return settings;
     }
 
@@ -47,7 +47,7 @@ export class CloudLocalization{
     private static _defaultLanguage: Language;
     private static _currentLanguage: Language;
     private static _supportsTranslateAttribute;
-    private static _settings : CloudLocalizationSettings;
+    private static _settings: CloudLocalizationSettings;
 
     private static get translationsList(): Translations[] {
 
@@ -78,7 +78,7 @@ export class CloudLocalization{
         let t: Translations;
 
         this.translationsList.forEach((translations) => {
-            
+
             if (translations.languageCode === languageCode)
                 t = translations;
         });
@@ -96,7 +96,7 @@ export class CloudLocalization{
         let properties = ['padding', 'margin'];
         let results = [];
 
-        properties.forEach((property) =>{
+        properties.forEach((property) => {
             results.push(property + '-left');
             results.push(property + '-right');
         });
@@ -220,16 +220,23 @@ export class CloudLocalization{
 
         let jsonPath = 'translation/' + this.currentLanguage.code.toLowerCase() + '.json';
 
+
+
         let fetchResponse = await fetch(jsonPath);
 
-        if (!fetchResponse.ok) {
+        let data;
+        try {
+            data = await fetchResponse.json();
+        } catch {
 
-                jsonPath = location.protocol + '//' + location.host +'/' + jsonPath;
+            jsonPath = location.protocol + '//' + location.host + '/' + jsonPath;
 
-                fetchResponse = await fetch(jsonPath);
+            fetchResponse = await fetch(jsonPath);
 
-                if (!fetchResponse.ok) {
+            try {
 
+                data = await fetchResponse.json();
+            } catch {
                 let nullTranslations = new Translations();
                 nullTranslations.languageCode = CloudLocalization.currentLanguage.code;
                 nullTranslations.translation = null;
@@ -239,8 +246,6 @@ export class CloudLocalization{
                 return undefined;
             }
         }
-
-        const data = await fetchResponse.json();
 
         for (const value of data)
             this.addTranslationValue(CloudLocalization.currentLanguage.code, value['o'], value['t']);
@@ -362,8 +367,8 @@ export class CloudLocalization{
     private static async translateElementText(element: HTMLElement): Promise<TranslationStatus> {
 
         if (element.tagName.toLowerCase() == 'script')
-        return new TranslationStatus(element, TranslationStatusResult.ignored);
-        
+            return new TranslationStatus(element, TranslationStatusResult.ignored);
+
         let childNode = element.childNodes[0];
 
         if (childNode === undefined)
@@ -530,7 +535,7 @@ export class CloudLocalization{
     private static switchRTLCSSValues(rule, name: string): string {
 
         name = name.split('-')[0];
-        
+
         const leftProperty = name + '-left';
         const rightProperty = name + '-right';
         let leftValue = rule.style[leftProperty];
@@ -640,38 +645,38 @@ export class CloudLocalization{
     private static scrollToTop(scrollDuration: number): void {
 
         const scrollTo = 0;
-                
+
         // Declarations
-    
+
         let cosParameter = (window.pageYOffset - scrollTo) / 2,
             scrollCount = 0,
             oldTimestamp = window.performance.now();
-    
+
         function step(newTimestamp: number): void {
-    
+
             let tsDiff = newTimestamp - oldTimestamp;
-    
+
             // Performance.now() polyfill loads late so passed-in timestamp is a larger offset
             // on the first go-through than we want so I'm adjusting the difference down here.
             // Regardless, we would rather have a slightly slower animation than a big jump so a good
             // safeguard, even if we're not using the polyfill.
-    
+
             if (tsDiff > 100)
                 tsDiff = 30;
-    
+
             scrollCount += Math.PI / (scrollDuration / tsDiff);
-    
+
             // As soon as we cross over Pi, we're about where we need to be
-    
+
             if (scrollCount >= Math.PI)
                 return;
-    
+
             const moveStep = Math.round(scrollTo + cosParameter + cosParameter * Math.cos(scrollCount));
             window.scrollTo(0, moveStep);
             oldTimestamp = newTimestamp;
             window.requestAnimationFrame(step);
         }
-    
+
         window.requestAnimationFrame(step);
     }
 
@@ -687,7 +692,7 @@ export class CloudLocalization{
         // Local Storage
         try {
             result = localStorage.getItem('lang');
-        } catch{
+        } catch {
             console.log('localStorage is not supported.');
             result = null;
         }
@@ -780,7 +785,7 @@ export class CloudLocalization{
 
         try {
             localStorage.setItem('lang', this._currentLanguage.code);
-        } catch{
+        } catch {
             console.log('localStorage is not supported.');
         }
         this.updateUrlLanguage();
