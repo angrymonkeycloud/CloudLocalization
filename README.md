@@ -86,7 +86,7 @@ cloudLocalization({
 
 ## Predefined Languages
 
-Add predefined languages as json files under 'translation' directory. each language code should have its own file named: languageCode.json.
+Add predefined languages as json files under 'translation' directory. each language code should have its own file named: {languageCode}.json.
 
 o: Original text.
 
