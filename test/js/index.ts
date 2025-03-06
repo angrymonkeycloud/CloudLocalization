@@ -17,7 +17,8 @@ cloudLocalization({
         code: 'ar',
         displayName: 'العربية',
         direction: LanguageDirection.rtl
-    }]
+    }],
+    restartOnLanguageChange: true
 });
 
 // Get selected language code.

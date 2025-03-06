@@ -45,6 +45,7 @@ export interface CloudLocalizationSettings {
     translatorProviderKey?: string;
     urlLanguageLocation?: UrlLanguageLocation;
     languages: Language[];
+    restartOnLanguageChange?: boolean;
 }
 
 export declare class CloudLocalization {
@@ -90,6 +91,7 @@ export declare class CloudLocalization {
     static updateCurrentLanguage(): void;
     static get currentLanguage(): Language;
     private static updateUrlLanguage;
+    private static get restartOnLanguageChange();
     static setCurrentLanguage(languageCode: string): void;
     static translateDOM(): Promise<void>;
     static fillInLanguages(): void;

@@ -9,4 +9,5 @@ export interface CloudLocalizationSettings {
     urlLanguageLocation?: UrlLanguageLocation;
 
     languages: Language[];
+    restartOnLanguageChange?: boolean; // Add this line
 }

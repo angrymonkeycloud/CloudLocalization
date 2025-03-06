@@ -795,6 +795,14 @@ var CloudLocalization = (function () {
             history.replaceState(null, null, pathnameSplitted.join('/'));
         }
     };
+    Object.defineProperty(CloudLocalization, "restartOnLanguageChange", {
+        get: function () {
+            var _a;
+            return (_a = this._settings.restartOnLanguageChange) !== null && _a !== void 0 ? _a : false;
+        },
+        enumerable: false,
+        configurable: true
+    });
     CloudLocalization.setCurrentLanguage = function (languageCode) {
         this._currentLanguage = this.parseLanguage(languageCode);
         try {
@@ -804,6 +812,9 @@ var CloudLocalization = (function () {
             console.log('localStorage is not supported.');
         }
         this.updateUrlLanguage();
+        if (this.restartOnLanguageChange) {
+            window.location.reload();
+        }
     };
     CloudLocalization.translateDOM = function () {
         return __awaiter(this, void 0, void 0, function () {
