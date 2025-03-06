@@ -1,6 +1,6 @@
 {
     "name": "cloudlocalization",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "JavaScript library for translating websites into multiple languages.",
     "main": "./dist/cloudlocalization.js",
     "scripts": {
@@ -17,8 +17,5 @@
         "html"
     ],
     "author": "Angry Monkey Cloud",
-    "license": "ISC",
-    "devDependencies": {
-        "@types/jquery": "^3.5.5"
-    }
+    "license": "ISC"
 }

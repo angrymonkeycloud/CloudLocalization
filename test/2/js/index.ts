@@ -23,19 +23,21 @@ cloudLocalization({
 // Get selected language code.
 console.log(CloudLocalization.currentLanguage.code);
 
-$(document).on('click', '#expandButton', function () {
-
-    let div: HTMLElement = document.querySelector('#newDiv');
+document.getElementById('expandButton')?.addEventListener('click', async () => {
+    let div: HTMLElement | null = document.querySelector('#newDiv');
 
     if (div === null) {
         div = document.createElement('div');
         div.id = 'newDiv';
         div.innerHTML = "Logo";
 
-        $(div).insertAfter('#expandButton');
+        const expandButton = document.getElementById('expandButton');
+        if (expandButton?.parentNode) {
+            expandButton.parentNode.insertBefore(div, expandButton.nextSibling);
+        }
 
-        CloudLocalization.translateElement(div);
+        await CloudLocalization.translateElement(div);
     } else {
-        $(div).remove();
+        div.remove();
     }
 });

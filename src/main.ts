@@ -12,15 +12,17 @@ export class CloudLocalization {
         CloudLocalization.fillInLanguages();
         CloudLocalization.translateDOM();
 
-        $(document).on('change', '.cloudlocalization-selection', async function () {
+        document.addEventListener('change', async (event) => {
+            const target = event.target as HTMLSelectElement;
+            if (target && target.classList.contains('cloudlocalization-selection')) {
+                let languageCode = target.value;
 
-            let languageCode = $(this).val().toString();
+                if (languageCode !== '')
+                    CloudLocalization.setCurrentLanguage(languageCode);
 
-            if (languageCode !== '')
-                CloudLocalization.setCurrentLanguage(languageCode);
-
-            CloudLocalization.scrollToTop(200);
-            await CloudLocalization.translateDOM();
+                CloudLocalization.scrollToTop(200);
+                await CloudLocalization.translateDOM();
+            }
         });
     }
 
@@ -130,28 +132,34 @@ export class CloudLocalization {
         if (this._supportsTranslateAttribute !== undefined)
             return this._supportsTranslateAttribute;
 
-        return this._supportsTranslateAttribute = $('body')[0].translate !== undefined;
+        return this._supportsTranslateAttribute = document.body.translate !== undefined;
     }
 
     private static doTranslateElement(element: HTMLElement): boolean {
-
         if (this.supportsTranslateAttribute) {
-            if (element.translate === false || ($(element).closest('*[translate]')[0] !== undefined && $(element).closest('*[translate]')[0].translate === false))
+            const closestTranslateElement = element.closest('*[translate]') as HTMLElement;
+            if (element.translate === false || (closestTranslateElement !== null && 'translate' in closestTranslateElement && closestTranslateElement.translate === false)) {
                 return false;
-            else return true;
+            } else {
+                return true;
+            }
         }
-
-        let attribute = $(element).attr('translate');
-
-        if (attribute === undefined) {
-            if ($(element).closest('*[translate]')[0] !== undefined && $(element).closest('*[translate]').attr('translate').toLowerCase() === 'no')
+    
+        let attribute = element.getAttribute('translate');
+    
+        if (attribute === null) {
+            const closestTranslateElement = element.closest('*[translate]') as HTMLElement;
+            if (closestTranslateElement !== null && closestTranslateElement.getAttribute('translate').toLowerCase() === 'no') {
                 return false;
-            else return true;
+            } else {
+                return true;
+            }
         }
-
-        if (attribute.toLowerCase() === 'no')
+    
+        if (attribute.toLowerCase() === 'no') {
             return false;
-
+        }
+    
         return true;
     }
 
@@ -220,8 +228,6 @@ export class CloudLocalization {
 
         let jsonPath = 'translation/' + this.currentLanguage.code.toLowerCase() + '.json';
 
-
-
         let fetchResponse = await fetch(jsonPath);
 
         let data;
@@ -287,7 +293,7 @@ export class CloudLocalization {
 
             if (style !== undefined) {
 
-                $(element).data('_ctoriginalstyle', style);
+                element.dataset._ctoriginalstyle = style;
 
                 let rtlStyle = '';
 
@@ -302,17 +308,17 @@ export class CloudLocalization {
                 }
 
                 if (rtlStyle !== style) {
-                    $(element).data('_ctoriginalstyle', style);
+                    element.dataset._ctoriginalstyle = style;
                     element.style.cssText = rtlStyle;
                 }
             }
 
         } else {
-            let originalStyle = $(element).data('_ctoriginalstyle');
+            let originalStyle = element.dataset._ctoriginalstyle;
 
             if (originalStyle !== '') {
-                $(element).attr('style', originalStyle);
-                $(element).removeData('_ctoriginalstyle');
+                element.setAttribute('style', originalStyle);
+                delete element.dataset._ctoriginalstyle;
             }
         }
 
@@ -442,8 +448,8 @@ export class CloudLocalization {
 
         let originalText: string;
 
-        if ($(element).data(dataValueName) !== undefined)
-            originalText = $(element).data(dataValueName);
+        if (element.dataset[dataValueName] !== undefined)
+            originalText = element.dataset[dataValueName];
 
         if ((originalText === undefined || originalText.trim() === '') && (currentValue === null || currentValue.trim() === ''))
             return new TranslationStatus(element, TranslationStatusResult.ignored);
@@ -455,15 +461,15 @@ export class CloudLocalization {
 
         if (translatedText === undefined) {
 
-            $(element).removeData(dataValueName);
+            delete element.dataset[dataValueName];
 
             return new TranslationStatus(element, TranslationStatusResult.failed, originalText);
         }
 
         if (translatedText !== originalText)
-            $(element).data(dataValueName, originalText);
+            element.dataset[dataValueName] = originalText;
         else
-            $(element).removeData(dataValueName);
+            delete element.dataset[dataValueName];
 
         return new TranslationStatus(element, TranslationStatusResult.succeeded, translatedText);
     }
@@ -476,59 +482,44 @@ export class CloudLocalization {
     }
 
     private static generateRTLCSS(): string {
-
         let style = 'html[dir="rtl"] {direction: rtl;}';
-
-        $.each(document.styleSheets, function (index, sheet) {
-
+    
+        Array.from(document.styleSheets).forEach((sheet: CSSStyleSheet) => {
             try {
-                style += CloudLocalization.getRulesStyle(sheet['cssRules'] || sheet['rules']);
+                // Use the standard cssRules property instead of bracket notation
+                style += CloudLocalization.getRulesStyle(sheet.cssRules);
             } catch (e) { }
         });
-
+    
         return style;
     }
 
-    private static getRulesStyle(rules): string {
-
+    private static getRulesStyle(rules: CSSRuleList): string {
         let result = '';
-
-        $.each(rules, function (index, rule) {
-
-            if (rule.type === 4) {
-                let mediaStyle;
-
-                try {
-                    mediaStyle = CloudLocalization.getRulesStyle(rule['cssRules'] || rule['rules']);
-                } catch (e) { return; }
-
+    
+        Array.from(rules).forEach((rule: CSSRule) => {
+            if (rule instanceof CSSMediaRule) {
+                let mediaStyle = this.getRulesStyle(rule.cssRules);
                 if (mediaStyle !== '') {
-                    result += '@media ' + rule.conditionText + '{';
-                    result += mediaStyle;
-                    result += '}';
+                    result += `@media ${rule.conditionText} {${mediaStyle}}`;
+                }
+            } else if (rule instanceof CSSStyleRule) {
+                let selectorStyle = '';
+    
+                this.stylePropertiesToOpposite.forEach((property) => {
+                    selectorStyle += this.oppositeRTLCSSValues(rule, property);
+                });
+    
+                this.stylePropertiesToSwitch.forEach((property) => {
+                    selectorStyle += this.switchRTLCSSValues(rule, property);
+                });
+    
+                if (selectorStyle !== '') {
+                    result += `html[dir=rtl] ${rule.selectorText} {${selectorStyle}}`;
                 }
             }
-
-            if (rule.style === undefined)
-                return;
-
-            let selectorStyle = '';
-
-            CloudLocalization.stylePropertiesToOpposite.forEach((property) => {
-                selectorStyle += CloudLocalization.oppositeRTLCSSValues(rule, property);
-            });
-
-            CloudLocalization.stylePropertiesToSwitch.forEach((property) => {
-                selectorStyle += CloudLocalization.switchRTLCSSValues(rule, property);
-            });
-
-            // Insert Class
-
-            if (selectorStyle !== '')
-                result += 'html[dir=rtl] ' + rule.selectorText + '{' + selectorStyle + '}';
-
         });
-
+    
         return result;
     }
 
@@ -607,35 +598,31 @@ export class CloudLocalization {
         let translatedTexts: string[] = [];
 
         try {
-            let data = await $.ajax({
-                url: 'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=' + this.defaultLanguage.code + '&to=' + this.currentLanguage.code,
-                type: "POST",
-                dataType: 'json',
-                data: '[' + bodyData + ']',
-                cache: true,
-
-                beforeSend: (xhrObj) => {
-                    xhrObj.setRequestHeader("Content-Type", "application/json");
-                    xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", this.translatorProviderKey);
+            let response = await fetch('https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=' + this.defaultLanguage.code + '&to=' + this.currentLanguage.code, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Ocp-Apim-Subscription-Key': this.translatorProviderKey
                 },
+                body: '[' + bodyData + ']'
             });
 
+            let data = await response.json();
 
             let jsonTranslations = [];
 
-            $.each(data, (index, translations) => {
+            data.forEach((translations, index) => {
                 translatedTexts[index] = translations.translations[0].text;
 
                 if (this.logTranslationsFromProvider)
                     jsonTranslations.push('{"o": "' + texts[index].trim() + '", "t": "' + translatedTexts[index].trim() + '"}');
             });
 
-
             if (this.logTranslationsFromProvider)
                 console.log('[' + jsonTranslations.join(',') + ']');
 
         } catch (e) {
-            console.log(e.responseJSON.error.message);
+            console.log(e.message);
             console.log(bodyData);
         }
 
@@ -793,122 +780,125 @@ export class CloudLocalization {
 
     static async translateDOM(): Promise<void> {
 
-        $('html').attr('lang', CloudLocalization.currentLanguage.code);
-
+        document.documentElement.lang = CloudLocalization.currentLanguage.code;
+    
         if (CloudLocalization.direction === LanguageDirection.rtl)
-            $('html').attr('dir', 'rtl');
-        else $('html').removeAttr('dir');
-
+            document.documentElement.dir = 'rtl';
+        else document.documentElement.removeAttribute('dir');
+    
         let styleSheet: StyleSheet;
-
-        $.each(document.styleSheets, function (index, sheet) {
+    
+        Array.from(document.styleSheets).forEach((sheet) => {
             try {
-                $.each(sheet['cssRules'] || sheet['rules'], function (ruleIndex, rule) {
-
+                Array.from(sheet['cssRules'] || sheet['rules']).forEach((rule) => {
+    
                     if (rule.cssText === 'html[dir="rtl"] { direction: rtl; }')
                         styleSheet = sheet;
                 });
             } catch (e) { }
         });
-
+    
         if (CloudLocalization.direction === LanguageDirection.rtl && styleSheet === undefined)
             CloudLocalization.addRTLCSS();
-
-        var selection = '*';
-        CloudLocalization.nonTranslatedElements.forEach((element) => {
-            selection += ':not(' + '"' + element + '"' + ')'
-        });
-
+    
+        const allElements = Array.from(document.querySelectorAll('*'));
+        const nonTranslatedElements = new Set(CloudLocalization.nonTranslatedElements
+            .map(selector => Array.from(document.querySelectorAll(selector)))
+            .reduce((acc, val) => acc.concat(val), []));
+    
+        const elementsToTranslate = allElements.filter(element => !nonTranslatedElements.has(element));
+    
         let translationStatuses: TranslationStatus[] = [];
-
-        for (const e of $(selection).toArray()) {
+    
+        for (const e of elementsToTranslate) {
             try {
-
-                const results = await CloudLocalization.translateElement(e);
-
+                const results = await CloudLocalization.translateElement(e as HTMLElement);
                 results.forEach((status) => {
                     translationStatuses.push(status);
                 });
             } catch (e) { }
-        };
-
+        }
+    
         if (this.currentLanguage.code !== this.defaultLanguage.code) {
-
+    
             let originalTexts: string[] = [];
-
+    
             translationStatuses.forEach((status) => {
-
+    
                 try {
                     switch (status.result) {
-
+    
                         case TranslationStatusResult.failed:
-
+    
                             originalTexts.push(status.text.replace(/"/g, '\\"'))
                             break;
-
+    
                         default:
                             break;
                     }
                 } catch (e) { }
             });
-
+    
             originalTexts = originalTexts.filter(this.onlyUnique);
-
+    
             if (this.translatorProvider === 1) {
                 try {
                     let translatedTexts = await this.azureAutoTranslate(originalTexts);
-
+    
                     let translations = this.getTranslations(CloudLocalization.currentLanguage.code).translation;
-
+    
                     if (translations === null)
                         this.getTranslations(CloudLocalization.currentLanguage.code).translation = [];
-
-                    $.each(translatedTexts, (index, text) => {
-
+    
+                    translatedTexts.forEach((text, index) => {
+    
                         try {
                             CloudLocalization.addTranslationValue(CloudLocalization.currentLanguage.code, originalTexts[index], text);
                         } catch (e) { }
                     });
                 } catch (e) { console.log(e); }
             }
-
+    
             for (const status of translationStatuses) {
-
+    
                 switch (status.result) {
-
+    
                     case TranslationStatusResult.failed:
-
+    
                         if (status.attribute === 'title')
                             await CloudLocalization.translateElementTitle(status.element);
                         else
                             await CloudLocalization.translateElementText(status.element);
                         break;
-
+    
                     default:
                         break;
                 }
-            };
-
+            }
+    
         }
-
+    
         this._currentLanguage = undefined;
     }
 
     static fillInLanguages(): void {
 
-        let selection = $('.cloudlocalization-selection');
+        let selection = document.querySelectorAll('.cloudlocalization-selection');
 
         if (selection.length === 0)
             return;
 
-        selection.attr('translate', 'no');
-
-        selection.html('');
+        selection.forEach((element) => {
+            element.setAttribute('translate', 'no');
+            element.innerHTML = '';
+        });
 
         let currentLanguage: string = this.currentLanguage.code;
 
         CloudLocalization.languages.forEach((language) => {
-            $('.cloudlocalization-selection').append('<option value="' + language.code + '"' + (language.code === currentLanguage ? ' selected ' : '') + '>' + language.displayName + '</option>')
+            selection.forEach((element) => {
+                element.innerHTML += '<option value="' + language.code + '"' + (language.code === currentLanguage ? ' selected ' : '') + '>' + language.displayName + '</option>';
+            });
         });
     }
 }
