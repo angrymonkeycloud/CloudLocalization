@@ -3,11 +3,13 @@ import { Language } from "./classes";
 
 export interface CloudLocalizationSettings {
     defaultLanguage?: string;
+    defaultTextLanguage?: string;
     logTranslationsFromProvider?: boolean;
     translatorProvider?: TranslatorProvider; 
     translatorProviderKey?: string;
     urlLanguageLocation?: UrlLanguageLocation;
+    useDefaultLanguageAlways?: boolean;
 
     languages: Language[];
-    restartOnLanguageChange?: boolean; // Add this line
+    restartOnLanguageChange?: boolean;
 }

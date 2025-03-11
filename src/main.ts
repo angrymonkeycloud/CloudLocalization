@@ -28,10 +28,12 @@ export class CloudLocalization {
     private mergeSettings(_settings: CloudLocalizationSettings): CloudLocalizationSettings {
         const settings: CloudLocalizationSettings = {
             defaultLanguage: 'en',
+            defaultTextLanguage: 'en',
             logTranslationsFromProvider: false,
             translatorProvider: TranslatorProvider.none,
             translatorProviderKey: '',
             urlLanguageLocation: UrlLanguageLocation.none,
+            useDefaultLanguageAlways: false,
             languages: []
         };
 
@@ -141,17 +143,18 @@ export class CloudLocalization {
     // Private Methods
 
     private static parseLanguage(requestLanguage: string): Language {
+        if (!requestLanguage)
+            return this.defaultLanguage;
+
         requestLanguage = requestLanguage.trim().toLowerCase();
 
         let result = this.languages.find(language => language.code.toLowerCase() === requestLanguage);
 
-        if (result) {
+        if (result)
             return result;
-        }
 
-        if (requestLanguage.includes('-')) {
+        if (requestLanguage.includes('-'))
             result = this.languages.find(language => language.code.toLowerCase() === requestLanguage.split('-')[0]);
-        }
 
         return result || this.defaultLanguage;
     }
@@ -175,14 +178,31 @@ export class CloudLocalization {
         let data;
 
         try {
-            data = await fetchResponse.json();
-        } catch {
+            if (!fetchResponse.ok)
+                throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+
+            const text = await fetchResponse.text();
+            if (!text) {
+                throw new Error('Empty response body');
+            }
+            data = JSON.parse(text);
+        } catch (error) {
+            console.error('Failed to fetch or parse JSON:', error);
             jsonPath = `${location.protocol}//${location.host}/${jsonPath}`;
             fetchResponse = await fetch(jsonPath);
 
             try {
-                data = await fetchResponse.json();
-            } catch {
+                if (!fetchResponse.ok)
+                    throw new Error(`HTTP error! status: ${fetchResponse.status}`);
+
+                const text = await fetchResponse.text();
+
+                if (!text)
+                    throw new Error('Empty response body');
+
+                data = JSON.parse(text);
+            } catch (error) {
+                console.error('Failed to fetch or parse JSON:', error);
                 const nullTranslations = new Translations();
                 nullTranslations.languageCode = CloudLocalization.currentLanguage.code;
                 nullTranslations.translation = null;
@@ -200,9 +220,8 @@ export class CloudLocalization {
     }
 
     private static async getTranslation(text: string): Promise<string> {
-        if (this.currentLanguage.code === this.defaultLanguage.code) {
+        if (this.currentLanguage.code === this.defaultTextLanguage.code)
             return text;
-        }
 
         const results = await CloudLocalization.translations();
         if (!results) {
@@ -396,7 +415,7 @@ export class CloudLocalization {
             try {
                 style += CloudLocalization.getRulesStyle(sheet.cssRules);
             } catch (e) {
-                console.error(e);
+                console.error(`Cannot access rules for stylesheet: ${sheet.href}`, e);
             }
         });
 
@@ -564,7 +583,6 @@ export class CloudLocalization {
         }
 
         // URL
-
         if (this.urlLanguageLocation !== undefined) {
             let urlValue: string;
 
@@ -596,20 +614,20 @@ export class CloudLocalization {
         }
 
         // Browser
+        if (!this._settings.useDefaultLanguageAlways) {
+            result = navigator.language || navigator['userLanguage'];
 
-        result = navigator.language || navigator['userLanguage'];
-
-        if (result !== undefined) {
-            browserLanguage = this.parseLanguage(result);
+            if (result !== undefined) {
+                browserLanguage = this.parseLanguage(result);
+            }
         }
 
         // Consolidation
-
         if (urlLanguage !== undefined) {
             this.setCurrentLanguage(urlLanguage.code);
         } else if (localStorageLanguage !== undefined) {
             this.setCurrentLanguage(localStorageLanguage.code);
-        } else if (browserLanguage !== undefined) {
+        } else if (browserLanguage !== undefined && !this._settings.useDefaultLanguageAlways) { 
             this.setCurrentLanguage(browserLanguage.code);
         } else {
             this.setCurrentLanguage(this.defaultLanguage.code);
@@ -635,13 +653,21 @@ export class CloudLocalization {
 
             const currentLanguageCode = pathnameSplitted[1];
 
-            if (currentLanguageCode.length === 2 || (currentLanguageCode.length === 5 && currentLanguageCode.includes('-'))) {
+            if (currentLanguageCode.length === 2 || (currentLanguageCode.length === 5 && currentLanguageCode.includes('-')))
                 pathnameSplitted[1] = this.currentLanguage.code;
-            } else {
+            else
                 pathnameSplitted.splice(1, 0, this.currentLanguage.code);
-            }
 
-            history.replaceState(null, null, pathnameSplitted.join('/'));
+
+            const newUrl = pathnameSplitted.join('/');
+
+            if (newUrl !== window.location.pathname) {
+                history.replaceState(null, null, newUrl);
+
+                if (this.restartOnLanguageChange)
+                    window.location.reload();
+
+            }
         }
     }
 
@@ -788,6 +814,10 @@ export class CloudLocalization {
                 element.innerHTML += '<option value="' + language.code + '"' + (language.code === currentLanguage ? ' selected ' : '') + '>' + language.displayName + '</option>';
             });
         });
+    }
+
+    private static get defaultTextLanguage(): Language {
+        return this.languages.find(language => language.code.toLowerCase() === this._settings.defaultTextLanguage.toLowerCase());
     }
 }
 

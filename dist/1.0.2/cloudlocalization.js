@@ -58,6 +58,17 @@ var exports = {};
 
 
 var exports = {};
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -109,8 +120,8 @@ var CloudLocalization = (function () {
                         target = event.target;
                         if (!(target && target.classList.contains('cloudlocalization-selection'))) return [3, 2];
                         languageCode = target.value;
-                        if (languageCode !== '')
-                            CloudLocalization.setCurrentLanguage(languageCode);
+                        if (!(languageCode !== '')) return [3, 2];
+                        CloudLocalization.setCurrentLanguage(languageCode);
                         CloudLocalization.scrollToTop(200);
                         return [4, CloudLocalization.translateDOM()];
                     case 1:
@@ -124,20 +135,18 @@ var CloudLocalization = (function () {
     CloudLocalization.prototype.mergeSettings = function (_settings) {
         var settings = {
             defaultLanguage: 'en',
+            defaultTextLanguage: 'en',
             logTranslationsFromProvider: false,
             translatorProvider: TranslatorProvider.none,
             translatorProviderKey: '',
             urlLanguageLocation: UrlLanguageLocation.none,
+            useDefaultLanguageAlways: false,
             languages: []
         };
-        for (var attrname in _settings)
-            settings[attrname] = _settings[attrname];
-        return settings;
+        return __assign(__assign({}, settings), _settings);
     };
     Object.defineProperty(CloudLocalization, "translationsList", {
         get: function () {
-            if (this._translationsList === undefined)
-                this._translationsList = [];
             return this._translationsList;
         },
         enumerable: false,
@@ -145,7 +154,7 @@ var CloudLocalization = (function () {
     });
     CloudLocalization.addTranslationValue = function (languageCode, defaultText, translatedText) {
         var translations = this.getTranslations(languageCode);
-        if (translations === undefined) {
+        if (!translations) {
             translations = new Translations();
             translations.languageCode = languageCode;
             this._translationsList.push(translations);
@@ -156,12 +165,7 @@ var CloudLocalization = (function () {
         translations.translation.push(translationValue);
     };
     CloudLocalization.getTranslations = function (languageCode) {
-        var t;
-        this.translationsList.forEach(function (translations) {
-            if (translations.languageCode === languageCode)
-                t = translations;
-        });
-        return t;
+        return this.translationsList.find(function (translations) { return translations.languageCode === languageCode; });
     };
     Object.defineProperty(CloudLocalization, "nonTranslatedElements", {
         get: function () {
@@ -173,12 +177,7 @@ var CloudLocalization = (function () {
     Object.defineProperty(CloudLocalization, "stylePropertiesToSwitch", {
         get: function () {
             var properties = ['padding', 'margin'];
-            var results = [];
-            properties.forEach(function (property) {
-                results.push(property + '-left');
-                results.push(property + '-right');
-            });
-            return results;
+            return properties.flatMap(function (property) { return ["".concat(property, "-left"), "".concat(property, "-right")]; });
         },
         enumerable: false,
         configurable: true
@@ -220,9 +219,10 @@ var CloudLocalization = (function () {
     });
     Object.defineProperty(CloudLocalization, "supportsTranslateAttribute", {
         get: function () {
-            if (this._supportsTranslateAttribute !== undefined)
+            if (this._supportsTranslateAttribute !== undefined) {
                 return this._supportsTranslateAttribute;
-            return this._supportsTranslateAttribute = document.body.translate !== undefined;
+            }
+            return this._supportsTranslateAttribute = 'translate' in document.body;
         },
         enumerable: false,
         configurable: true
@@ -230,37 +230,22 @@ var CloudLocalization = (function () {
     CloudLocalization.doTranslateElement = function (element) {
         if (this.supportsTranslateAttribute) {
             var closestTranslateElement = element.closest('*[translate]');
-            if (element.translate === false || (closestTranslateElement !== null && 'translate' in closestTranslateElement && closestTranslateElement.translate === false)) {
-                return false;
-            }
-            else {
-                return true;
-            }
+            return !(element.translate === false || (closestTranslateElement && closestTranslateElement.translate === false));
         }
         var attribute = element.getAttribute('translate');
-        if (attribute === null) {
+        if (!attribute) {
             var closestTranslateElement = element.closest('*[translate]');
-            if (closestTranslateElement !== null && closestTranslateElement.getAttribute('translate').toLowerCase() === 'no') {
-                return false;
-            }
-            else {
-                return true;
-            }
+            return !(closestTranslateElement && closestTranslateElement.getAttribute('translate').toLowerCase() === 'no');
         }
-        if (attribute.toLowerCase() === 'no') {
-            return false;
-        }
-        return true;
+        return attribute.toLowerCase() !== 'no';
     };
     Object.defineProperty(CloudLocalization, "defaultLanguage", {
         get: function () {
             var _this = this;
-            if (this._defaultLanguage !== undefined)
+            if (this._defaultLanguage) {
                 return this._defaultLanguage;
-            this.languages.forEach(function (language) {
-                if (language.code.toLowerCase() === _this._settings.defaultLanguage.toLowerCase())
-                    _this._defaultLanguage = language;
-            });
+            }
+            this._defaultLanguage = this.languages.find(function (language) { return language.code.toLowerCase() === _this._settings.defaultLanguage.toLowerCase(); });
             return this._defaultLanguage;
         },
         enumerable: false,
@@ -274,22 +259,15 @@ var CloudLocalization = (function () {
         configurable: true
     });
     CloudLocalization.parseLanguage = function (requestLanguage) {
+        if (!requestLanguage)
+            return this.defaultLanguage;
         requestLanguage = requestLanguage.trim().toLowerCase();
-        var result;
-        this.languages.forEach(function (language) {
-            if (language.code.toLowerCase() === requestLanguage)
-                result = language;
-        });
-        if (result !== undefined)
+        var result = this.languages.find(function (language) { return language.code.toLowerCase() === requestLanguage; });
+        if (result)
             return result;
-        if (requestLanguage.indexOf('-') !== -1)
-            this.languages.forEach(function (language) {
-                if (language.code.toLowerCase() === requestLanguage.split('-')[0])
-                    result = language;
-            });
-        if (result !== undefined)
-            return result;
-        return this.defaultLanguage;
+        if (requestLanguage.includes('-'))
+            result = this.languages.find(function (language) { return language.code.toLowerCase() === requestLanguage.split('-')[0]; });
+        return result || this.defaultLanguage;
     };
     Object.defineProperty(CloudLocalization, "direction", {
         get: function () {
@@ -300,41 +278,56 @@ var CloudLocalization = (function () {
     });
     CloudLocalization.translations = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var translations, jsonPath, fetchResponse, data, _a, _b, nullTranslations, _i, data_1, value;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var translations, jsonPath, fetchResponse, data, text, error_1, text, error_2, nullTranslations, _i, data_1, value;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         translations = this.getTranslations(CloudLocalization.currentLanguage.code);
-                        if (translations !== undefined && translations.translation === null)
+                        if (translations && translations.translation === null) {
                             return [2, undefined];
-                        else if (translations !== undefined)
+                        }
+                        else if (translations) {
                             return [2, translations];
-                        jsonPath = 'translation/' + this.currentLanguage.code.toLowerCase() + '.json';
+                        }
+                        jsonPath = "translation/".concat(this.currentLanguage.code.toLowerCase(), ".json");
                         return [4, fetch(jsonPath)];
                     case 1:
-                        fetchResponse = _c.sent();
-                        _c.label = 2;
+                        fetchResponse = _a.sent();
+                        _a.label = 2;
                     case 2:
-                        _c.trys.push([2, 4, , 10]);
-                        return [4, fetchResponse.json()];
+                        _a.trys.push([2, 4, , 10]);
+                        if (!fetchResponse.ok)
+                            throw new Error("HTTP error! status: ".concat(fetchResponse.status));
+                        return [4, fetchResponse.text()];
                     case 3:
-                        data = _c.sent();
+                        text = _a.sent();
+                        if (!text) {
+                            throw new Error('Empty response body');
+                        }
+                        data = JSON.parse(text);
                         return [3, 10];
                     case 4:
-                        _a = _c.sent();
-                        jsonPath = location.protocol + '//' + location.host + '/' + jsonPath;
+                        error_1 = _a.sent();
+                        console.error('Failed to fetch or parse JSON:', error_1);
+                        jsonPath = "".concat(location.protocol, "//").concat(location.host, "/").concat(jsonPath);
                         return [4, fetch(jsonPath)];
                     case 5:
-                        fetchResponse = _c.sent();
-                        _c.label = 6;
+                        fetchResponse = _a.sent();
+                        _a.label = 6;
                     case 6:
-                        _c.trys.push([6, 8, , 9]);
-                        return [4, fetchResponse.json()];
+                        _a.trys.push([6, 8, , 9]);
+                        if (!fetchResponse.ok)
+                            throw new Error("HTTP error! status: ".concat(fetchResponse.status));
+                        return [4, fetchResponse.text()];
                     case 7:
-                        data = _c.sent();
+                        text = _a.sent();
+                        if (!text)
+                            throw new Error('Empty response body');
+                        data = JSON.parse(text);
                         return [3, 9];
                     case 8:
-                        _b = _c.sent();
+                        error_2 = _a.sent();
+                        console.error('Failed to fetch or parse JSON:', error_2);
                         nullTranslations = new Translations();
                         nullTranslations.languageCode = CloudLocalization.currentLanguage.code;
                         nullTranslations.translation = null;
@@ -351,53 +344,51 @@ var CloudLocalization = (function () {
             });
         });
     };
-    ;
     CloudLocalization.getTranslation = function (text) {
         return __awaiter(this, void 0, void 0, function () {
-            var translation, results;
+            var results, translation;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (this.currentLanguage.code === this.defaultLanguage.code)
+                        if (this.currentLanguage.code === this.defaultTextLanguage.code)
                             return [2, text];
-                        translation = null;
                         return [4, CloudLocalization.translations()];
                     case 1:
                         results = _a.sent();
-                        if (results === undefined)
+                        if (!results) {
                             return [2, undefined];
-                        results.translation.forEach(function (t) {
-                            if (t.default.trim() === text.trim())
-                                translation = t;
-                        });
-                        if (translation === null)
-                            return [2, undefined];
-                        return [2, translation.text.replace(text.trim(), translation.text)];
+                        }
+                        translation = results.translation.find(function (t) { return t.default.trim() === text.trim(); });
+                        return [2, translation ? translation.text.replace(text.trim(), translation.text) : undefined];
                 }
             });
         });
     };
     CloudLocalization.translateElement = function (element) {
         return __awaiter(this, void 0, void 0, function () {
-            var style, rtlStyle, i, propertyName, originalStyle, elementHref, translationStatuses, status_1, e_1, status_2, e_2, status_3, e_3;
+            var style, rtlStyle, i, propertyName, originalStyle, elementHref, protocol, translationStatuses, status_1, e_1, status_2, e_2, status_3, e_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (element === undefined)
+                        if (!element) {
                             return [2, []];
+                        }
                         if (CloudLocalization.direction === LanguageDirection.rtl) {
                             style = element.style.cssText;
-                            if (style !== undefined) {
+                            if (style) {
                                 element.dataset._ctoriginalstyle = style;
                                 rtlStyle = '';
                                 for (i = 0; i < element.style.length; i++) {
                                     propertyName = element.style[i];
-                                    if (CloudLocalization.stylePropertiesToOpposite.indexOf(propertyName) !== -1)
+                                    if (CloudLocalization.stylePropertiesToOpposite.includes(propertyName)) {
                                         rtlStyle += CloudLocalization.oppositeRTLCSSValues(element, propertyName);
-                                    else if (CloudLocalization.stylePropertiesToSwitch.indexOf(propertyName) !== -1)
+                                    }
+                                    else if (CloudLocalization.stylePropertiesToSwitch.includes(propertyName)) {
                                         rtlStyle += CloudLocalization.switchRTLCSSValues(element, propertyName);
-                                    else
-                                        rtlStyle += propertyName + ': ' + element.style[propertyName] + '; ';
+                                    }
+                                    else {
+                                        rtlStyle += "".concat(propertyName, ": ").concat(element.style[propertyName], "; ");
+                                    }
                                 }
                                 if (rtlStyle !== style) {
                                     element.dataset._ctoriginalstyle = style;
@@ -407,18 +398,19 @@ var CloudLocalization = (function () {
                         }
                         else {
                             originalStyle = element.dataset._ctoriginalstyle;
-                            if (originalStyle !== '') {
+                            if (originalStyle) {
                                 element.setAttribute('style', originalStyle);
                                 delete element.dataset._ctoriginalstyle;
                             }
                         }
-                        if (!this.doTranslateElement(element))
+                        if (!this.doTranslateElement(element)) {
                             return [2, []];
+                        }
                         if (element.tagName === 'A') {
                             elementHref = element.getAttribute('href');
-                            if (elementHref.indexOf(':') !== -1) {
-                                elementHref = elementHref.split(':')[0].toLowerCase();
-                                if (elementHref === 'mailto' || elementHref === 'tel') {
+                            if (elementHref && elementHref.includes(':')) {
+                                protocol = elementHref.split(':')[0].toLowerCase();
+                                if (protocol === 'mailto' || protocol === 'tel') {
                                     element.setAttribute('dir', 'ltr');
                                     return [2, []];
                                 }
@@ -435,6 +427,7 @@ var CloudLocalization = (function () {
                         return [3, 4];
                     case 3:
                         e_1 = _a.sent();
+                        console.error(e_1);
                         return [3, 4];
                     case 4:
                         _a.trys.push([4, 6, , 7]);
@@ -445,6 +438,7 @@ var CloudLocalization = (function () {
                         return [3, 7];
                     case 6:
                         e_2 = _a.sent();
+                        console.error(e_2);
                         return [3, 7];
                     case 7:
                         if (!(element.tagName === 'INPUT')) return [3, 11];
@@ -458,6 +452,7 @@ var CloudLocalization = (function () {
                         return [3, 11];
                     case 10:
                         e_3 = _a.sent();
+                        console.error(e_3);
                         return [3, 11];
                     case 11: return [2, translationStatuses];
                 }
@@ -473,15 +468,13 @@ var CloudLocalization = (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (element.tagName.toLowerCase() == 'script')
+                        if (element.tagName.toLowerCase() === 'script') {
                             return [2, new TranslationStatus(element, TranslationStatusResult.ignored)];
+                        }
                         childNode = element.childNodes[0];
-                        if (childNode === undefined)
+                        if (!childNode || !childNode.nodeValue || childNode.nodeValue.trim() === '') {
                             return [2, new TranslationStatus(element, TranslationStatusResult.ignored)];
-                        if (childNode.nodeValue === null)
-                            return [2, new TranslationStatus(element, TranslationStatusResult.ignored)];
-                        if (childNode.nodeValue.trim() === '')
-                            return [2, new TranslationStatus(element, TranslationStatusResult.ignored)];
+                        }
                         return [4, CloudLocalization.translate(element, '_ctoriginaltext', childNode.nodeValue)];
                     case 1:
                         translationStatus = _a.sent();
@@ -541,8 +534,6 @@ var CloudLocalization = (function () {
                                 element.placeholder = translationStatus.text;
                                 translationStatus.attribute = 'placeholder';
                                 return [2, translationStatus];
-                            default:
-                                return [2, translationStatus];
                         }
                         return [2];
                 }
@@ -555,23 +546,26 @@ var CloudLocalization = (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (element.dataset[dataValueName] !== undefined)
-                            originalText = element.dataset[dataValueName];
-                        if ((originalText === undefined || originalText.trim() === '') && (currentValue === null || currentValue.trim() === ''))
+                        originalText = element.dataset[dataValueName];
+                        if ((!originalText || originalText.trim() === '') && (!currentValue || currentValue.trim() === '')) {
                             return [2, new TranslationStatus(element, TranslationStatusResult.ignored)];
-                        if (originalText === undefined || originalText.trim() === '')
+                        }
+                        if (!originalText || originalText.trim() === '') {
                             originalText = currentValue;
+                        }
                         return [4, CloudLocalization.getTranslation(originalText)];
                     case 1:
                         translatedText = _a.sent();
-                        if (translatedText === undefined) {
+                        if (!translatedText) {
                             delete element.dataset[dataValueName];
                             return [2, new TranslationStatus(element, TranslationStatusResult.failed, originalText)];
                         }
-                        if (translatedText !== originalText)
+                        if (translatedText !== originalText) {
                             element.dataset[dataValueName] = originalText;
-                        else
+                        }
+                        else {
                             delete element.dataset[dataValueName];
+                        }
                         return [2, new TranslationStatus(element, TranslationStatusResult.succeeded, translatedText)];
                 }
             });
@@ -581,7 +575,7 @@ var CloudLocalization = (function () {
         var style = document.createElement('style');
         style.type = 'text/css';
         style.innerHTML = CloudLocalization.generateRTLCSS();
-        document.getElementsByTagName('head')[0].appendChild(style);
+        document.head.appendChild(style);
     };
     CloudLocalization.generateRTLCSS = function () {
         var style = 'html[dir="rtl"] {direction: rtl;}';
@@ -589,7 +583,9 @@ var CloudLocalization = (function () {
             try {
                 style += CloudLocalization.getRulesStyle(sheet.cssRules);
             }
-            catch (e) { }
+            catch (e) {
+                console.error("Cannot access rules for stylesheet: ".concat(sheet.href), e);
+            }
         });
         return style;
     };
@@ -599,7 +595,7 @@ var CloudLocalization = (function () {
         Array.from(rules).forEach(function (rule) {
             if (rule instanceof CSSMediaRule) {
                 var mediaStyle = _this.getRulesStyle(rule.cssRules);
-                if (mediaStyle !== '') {
+                if (mediaStyle) {
                     result += "@media ".concat(rule.conditionText, " {").concat(mediaStyle, "}");
                 }
             }
@@ -611,7 +607,7 @@ var CloudLocalization = (function () {
                 _this.stylePropertiesToSwitch.forEach(function (property) {
                     selectorStyle_1 += _this.switchRTLCSSValues(rule, property);
                 });
-                if (selectorStyle_1 !== '') {
+                if (selectorStyle_1) {
                     result += "html[dir=rtl] ".concat(rule.selectorText, " {").concat(selectorStyle_1, "}");
                 }
             }
@@ -619,105 +615,101 @@ var CloudLocalization = (function () {
         return result;
     };
     CloudLocalization.switchRTLCSSValues = function (rule, name) {
-        name = name.split('-')[0];
-        var leftProperty = name + '-left';
-        var rightProperty = name + '-right';
+        var baseName = name.split('-')[0];
+        var leftProperty = "".concat(baseName, "-left");
+        var rightProperty = "".concat(baseName, "-right");
         var leftValue = rule.style[leftProperty];
         var rightValue = rule.style[rightProperty];
-        if (leftValue === '' && rightValue === '')
+        if (!leftValue && !rightValue) {
             return '';
-        if (leftValue === rightValue)
+        }
+        if (leftValue === rightValue) {
             return '';
-        if (leftValue === '')
+        }
+        if (!leftValue) {
             leftValue = 'initial';
-        if (rightValue === '')
+        }
+        if (!rightValue) {
             rightValue = 'initial';
-        var style = leftProperty + ': ' + rightValue + ';' + rightProperty + ': ' + leftValue + ';';
-        return style;
+        }
+        return "".concat(leftProperty, ": ").concat(rightValue, "; ").concat(rightProperty, ": ").concat(leftValue, ";");
     };
     CloudLocalization.oppositeRTLCSSValues = function (rule, name) {
         var value = rule.style[name];
-        if (value === '')
+        if (!value) {
             return '';
-        var style = '';
-        if (value === 'left')
-            style += name + ': right;';
-        else if (value === 'right')
-            style += name + ': left;';
-        else if (CloudLocalization.canBeNegative(value)) {
-            if (value.indexOf('-') === 0)
-                style += name + ': ' + value.substr(1) + ';';
-            else
-                style += name + ': -' + value + ';';
         }
-        return style;
+        if (value === 'left') {
+            return "".concat(name, ": right;");
+        }
+        else if (value === 'right') {
+            return "".concat(name, ": left;");
+        }
+        else if (CloudLocalization.canBeNegative(value)) {
+            return value.startsWith('-') ? "".concat(name, ": ").concat(value.substr(1), ";") : "".concat(name, ": -").concat(value, ";");
+        }
+        return '';
     };
     CloudLocalization.canBeNegative = function (value) {
-        var unites = ['px', 'pt', 'pc', 'cm', 'mm', 'in', 'em', 'rem', 'vw', 'vh', 'ex', 'ch', 'vmin', 'vmax', '%'];
-        var isTrue = false;
-        unites.forEach(function (unit) {
-            if (value.indexOf(unit) > 0 && value.indexOf(' ') === -1)
-                isTrue = true;
-        });
-        return isTrue;
+        var units = ['px', 'pt', 'pc', 'cm', 'mm', 'in', 'em', 'rem', 'vw', 'vh', 'ex', 'ch', 'vmin', 'vmax', '%'];
+        return units.some(function (unit) { return value.includes(unit) && !value.includes(' '); });
     };
     CloudLocalization.azureAutoTranslate = function (texts) {
         return __awaiter(this, void 0, void 0, function () {
-            var bodyData, translatedTexts, response, data, jsonTranslations_1, e_4;
-            var _this = this;
+            var bodyData, response, data, translatedTexts_1, jsonTranslations, e_4;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        if (texts.length === 0)
+                        if (texts.length === 0) {
                             return [2, []];
-                        bodyData = '';
-                        texts.forEach(function (text) { bodyData += '{"Text": "' + text + '"},'; });
-                        translatedTexts = [];
+                        }
+                        bodyData = texts.map(function (text) { return "{\"Text\": \"".concat(text, "\"}"); }).join(',');
                         _a.label = 1;
                     case 1:
                         _a.trys.push([1, 4, , 5]);
-                        return [4, fetch('https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=' + this.defaultLanguage.code + '&to=' + this.currentLanguage.code, {
+                        return [4, fetch("https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=".concat(this.defaultLanguage.code, "&to=").concat(this.currentLanguage.code), {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'Ocp-Apim-Subscription-Key': this.translatorProviderKey
                                 },
-                                body: '[' + bodyData + ']'
+                                body: "[".concat(bodyData, "]")
                             })];
                     case 2:
                         response = _a.sent();
                         return [4, response.json()];
                     case 3:
                         data = _a.sent();
-                        jsonTranslations_1 = [];
-                        data.forEach(function (translations, index) {
-                            translatedTexts[index] = translations.translations[0].text;
-                            if (_this.logTranslationsFromProvider)
-                                jsonTranslations_1.push('{"o": "' + texts[index].trim() + '", "t": "' + translatedTexts[index].trim() + '"}');
-                        });
-                        if (this.logTranslationsFromProvider)
-                            console.log('[' + jsonTranslations_1.join(',') + ']');
-                        return [3, 5];
+                        translatedTexts_1 = data.map(function (translations) { return translations.translations[0].text; });
+                        if (this.logTranslationsFromProvider) {
+                            jsonTranslations = texts.map(function (text, index) { return "{\"o\": \"".concat(text.trim(), "\", \"t\": \"").concat(translatedTexts_1[index].trim(), "\"}"); });
+                            console.log("[".concat(jsonTranslations.join(','), "]"));
+                        }
+                        return [2, translatedTexts_1];
                     case 4:
                         e_4 = _a.sent();
-                        console.log(e_4.message);
-                        console.log(bodyData);
-                        return [3, 5];
-                    case 5: return [2, translatedTexts];
+                        console.error(e_4.message);
+                        console.error(bodyData);
+                        return [2, []];
+                    case 5: return [2];
                 }
             });
         });
     };
     CloudLocalization.scrollToTop = function (scrollDuration) {
         var scrollTo = 0;
-        var cosParameter = (window.pageYOffset - scrollTo) / 2, scrollCount = 0, oldTimestamp = window.performance.now();
+        var cosParameter = (window.pageYOffset - scrollTo) / 2;
+        var scrollCount = 0;
+        var oldTimestamp = window.performance.now();
         function step(newTimestamp) {
             var tsDiff = newTimestamp - oldTimestamp;
-            if (tsDiff > 100)
+            if (tsDiff > 100) {
                 tsDiff = 30;
+            }
             scrollCount += Math.PI / (scrollDuration / tsDiff);
-            if (scrollCount >= Math.PI)
+            if (scrollCount >= Math.PI) {
                 return;
+            }
             var moveStep = Math.round(scrollTo + cosParameter + cosParameter * Math.cos(scrollCount));
             window.scrollTo(0, moveStep);
             oldTimestamp = newTimestamp;
@@ -737,45 +729,57 @@ var CloudLocalization = (function () {
             console.log('localStorage is not supported.');
             result = null;
         }
-        if (result !== null)
+        if (result !== null) {
             localStorageLanguage = this.parseLanguage(result);
+        }
         if (this.urlLanguageLocation !== undefined) {
             var urlValue_1;
-            if (this.urlLanguageLocation === UrlLanguageLocation.subdirectory)
+            if (this.urlLanguageLocation === UrlLanguageLocation.subdirectory) {
                 urlValue_1 = window.location.pathname.split('/')[1];
-            if (urlValue_1 !== undefined)
-                if (urlValue_1.length === 2 || (urlValue_1.length === 5 && urlValue_1.indexOf('-') === 2)) {
-                    this.languages.forEach(function (language) {
-                        if (language.code.toLowerCase() === urlValue_1.toLowerCase())
-                            result = language.code;
-                    });
-                    if (urlValue_1.indexOf('-') !== -1 && result === undefined) {
-                        urlValue_1 = urlValue_1.split('-')[0];
-                        this.languages.forEach(function (language) {
-                            if (language.code.toLowerCase() === urlValue_1.toLowerCase())
-                                result = language.code;
-                        });
+            }
+            if (urlValue_1 !== undefined && (urlValue_1.length === 2 || (urlValue_1.length === 5 && urlValue_1.includes('-')))) {
+                this.languages.forEach(function (language) {
+                    if (language.code.toLowerCase() === urlValue_1.toLowerCase()) {
+                        result = language.code;
                     }
-                    if (result !== undefined)
-                        urlLanguage = this.parseLanguage(result);
+                });
+                if (urlValue_1.includes('-') && result === undefined) {
+                    urlValue_1 = urlValue_1.split('-')[0];
+                    this.languages.forEach(function (language) {
+                        if (language.code.toLowerCase() === urlValue_1.toLowerCase()) {
+                            result = language.code;
+                        }
+                    });
                 }
+                if (result !== undefined) {
+                    urlLanguage = this.parseLanguage(result);
+                }
+            }
         }
-        result = navigator['language'] || navigator['userLanguage'];
-        if (result !== undefined)
-            browserLanguage = this.parseLanguage(result);
-        if (urlLanguage !== undefined)
+        if (!this._settings.useDefaultLanguageAlways) {
+            result = navigator.language || navigator['userLanguage'];
+            if (result !== undefined) {
+                browserLanguage = this.parseLanguage(result);
+            }
+        }
+        if (urlLanguage !== undefined) {
             this.setCurrentLanguage(urlLanguage.code);
-        else if (localStorageLanguage !== undefined)
+        }
+        else if (localStorageLanguage !== undefined) {
             this.setCurrentLanguage(localStorageLanguage.code);
-        else if (browserLanguage !== undefined)
+        }
+        else if (browserLanguage !== undefined && !this._settings.useDefaultLanguageAlways) {
             this.setCurrentLanguage(browserLanguage.code);
-        else
+        }
+        else {
             this.setCurrentLanguage(this.defaultLanguage.code);
+        }
     };
     Object.defineProperty(CloudLocalization, "currentLanguage", {
         get: function () {
-            if (this._currentLanguage !== undefined)
+            if (this._currentLanguage) {
                 return this._currentLanguage;
+            }
             this.updateCurrentLanguage();
             return this._currentLanguage;
         },
@@ -783,16 +787,22 @@ var CloudLocalization = (function () {
         configurable: true
     });
     CloudLocalization.updateUrlLanguage = function () {
-        if (this.urlLanguageLocation === undefined)
+        if (this.urlLanguageLocation === undefined) {
             return;
+        }
         if (this.urlLanguageLocation === UrlLanguageLocation.subdirectory) {
             var pathnameSplitted = window.location.pathname.split('/');
             var currentLanguageCode = pathnameSplitted[1];
-            if (currentLanguageCode.length === 2 || (currentLanguageCode.length === 5 && currentLanguageCode.indexOf('-') === 2))
+            if (currentLanguageCode.length === 2 || (currentLanguageCode.length === 5 && currentLanguageCode.includes('-')))
                 pathnameSplitted[1] = this.currentLanguage.code;
             else
                 pathnameSplitted.splice(1, 0, this.currentLanguage.code);
-            history.replaceState(null, null, pathnameSplitted.join('/'));
+            var newUrl = pathnameSplitted.join('/');
+            if (newUrl !== window.location.pathname) {
+                history.replaceState(null, null, newUrl);
+                if (this.restartOnLanguageChange)
+                    window.location.reload();
+            }
         }
     };
     Object.defineProperty(CloudLocalization, "restartOnLanguageChange", {
@@ -804,15 +814,15 @@ var CloudLocalization = (function () {
         configurable: true
     });
     CloudLocalization.setCurrentLanguage = function (languageCode) {
+        var _a;
         this._currentLanguage = this.parseLanguage(languageCode);
-        try {
-            localStorage.setItem('lang', this._currentLanguage.code);
-        }
-        catch (_a) {
-            console.log('localStorage is not supported.');
-        }
+        if (!this._currentLanguage)
+            return;
+        var currentLanguage = this.parseLanguage(localStorage.getItem('lang'));
+        var sameLanguage = (currentLanguage === null || currentLanguage === void 0 ? void 0 : currentLanguage.code.toLowerCase()) === ((_a = this._currentLanguage) === null || _a === void 0 ? void 0 : _a.code.toLowerCase());
+        localStorage.setItem('lang', this._currentLanguage.code);
         this.updateUrlLanguage();
-        if (this.restartOnLanguageChange) {
+        if (this.restartOnLanguageChange && !sameLanguage) {
             window.location.reload();
         }
     };
@@ -950,6 +960,15 @@ var CloudLocalization = (function () {
             });
         });
     };
+    Object.defineProperty(CloudLocalization, "defaultTextLanguage", {
+        get: function () {
+            var _this = this;
+            return this.languages.find(function (language) { return language.code.toLowerCase() === _this._settings.defaultTextLanguage.toLowerCase(); });
+        },
+        enumerable: false,
+        configurable: true
+    });
+    CloudLocalization._translationsList = [];
     return CloudLocalization;
 }());
 { CloudLocalization };

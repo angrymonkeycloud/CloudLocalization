@@ -40,10 +40,12 @@ export declare class TranslationStatus {
 
 export interface CloudLocalizationSettings {
     defaultLanguage?: string;
+    defaultTextLanguage?: string;
     logTranslationsFromProvider?: boolean;
     translatorProvider?: TranslatorProvider;
     translatorProviderKey?: string;
     urlLanguageLocation?: UrlLanguageLocation;
+    useDefaultLanguageAlways?: boolean;
     languages: Language[];
     restartOnLanguageChange?: boolean;
 }
@@ -95,6 +97,7 @@ export declare class CloudLocalization {
     static setCurrentLanguage(languageCode: string): void;
     static translateDOM(): Promise<void>;
     static fillInLanguages(): void;
+    private static get defaultTextLanguage();
 }
 declare const cloudLocalization: (settings?: CloudLocalizationSettings) => CloudLocalization;
 export default cloudLocalization;
