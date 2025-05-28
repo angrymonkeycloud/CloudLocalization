@@ -46,6 +46,7 @@ export interface CloudLocalizationSettings {
     translatorProviderKey?: string;
     urlLanguageLocation?: UrlLanguageLocation;
     useDefaultLanguageAlways?: boolean;
+    preventLayoutChangeForRTL?: boolean;
     languages: Language[];
     restartOnLanguageChange?: boolean;
 }
@@ -78,7 +79,7 @@ export declare class CloudLocalization {
     private static getTranslation;
     static translateElement(element: HTMLElement): Promise<TranslationStatus[]>;
     private static onlyUnique;
-    private static translateElementText;
+    static translateElementText(element: HTMLElement): Promise<TranslationStatus>;
     private static translateElementTitle;
     private static translateElementPlaceholder;
     private static translate;
@@ -89,7 +90,7 @@ export declare class CloudLocalization {
     private static oppositeRTLCSSValues;
     private static canBeNegative;
     private static azureAutoTranslate;
-    private static scrollToTop;
+    static scrollToTop(scrollDuration: number): void;
     static updateCurrentLanguage(): void;
     static get currentLanguage(): Language;
     private static updateUrlLanguage;

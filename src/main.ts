@@ -755,16 +755,15 @@ export class CloudLocalization {
                 } catch (e) { }
             });
 
-            originalTexts = originalTexts.filter(this.onlyUnique);
-
-            if (this.translatorProvider === 1) {
+            originalTexts = originalTexts.filter(this.onlyUnique);            if (this.translatorProvider === 1) {
                 try {
                     let translatedTexts = await this.azureAutoTranslate(originalTexts);
 
-                    let translations = this.getTranslations(CloudLocalization.currentLanguage.code).translation;
+                    let translationsObj = this.getTranslations(CloudLocalization.currentLanguage.code);
+                    let translations = translationsObj?.translation;
 
-                    if (translations === null)
-                        this.getTranslations(CloudLocalization.currentLanguage.code).translation = [];
+                    if (translationsObj && translations === null)
+                        translationsObj.translation = [];
 
                     translatedTexts.forEach((text, index) => {
 
@@ -772,10 +771,11 @@ export class CloudLocalization {
                             CloudLocalization.addTranslationValue(CloudLocalization.currentLanguage.code, originalTexts[index], text);
                         } catch (e) { }
                     });
-                } catch (e) { console.log(e); }
-            }
+                } catch (e) { console.log(e); }            }
 
             for (const status of translationStatuses) {
+
+                if (!status) continue; // Skip undefined/null status objects
 
                 switch (status.result) {
 
