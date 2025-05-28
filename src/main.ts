@@ -34,6 +34,7 @@ export class CloudLocalization {
             translatorProviderKey: '',
             urlLanguageLocation: UrlLanguageLocation.none,
             useDefaultLanguageAlways: false,
+            preventLayoutChangeForRTL: false,
             languages: []
         };
 
@@ -318,7 +319,7 @@ export class CloudLocalization {
         return self.indexOf(value) === index;
     }
 
-    private static async translateElementText(element: HTMLElement): Promise<TranslationStatus> {
+    public static async translateElementText(element: HTMLElement): Promise<TranslationStatus> {
         if (element.tagName.toLowerCase() === 'script') {
             return new TranslationStatus(element, TranslationStatusResult.ignored);
         }
@@ -533,7 +534,7 @@ export class CloudLocalization {
         }
     }
 
-    private static scrollToTop(scrollDuration: number): void {
+    public static scrollToTop(scrollDuration: number): void {
         const scrollTo = 0;
         const cosParameter = (window.pageYOffset - scrollTo) / 2;
         let scrollCount = 0;
@@ -693,27 +694,28 @@ export class CloudLocalization {
     }
 
     static async translateDOM(): Promise<void> {
-
         document.documentElement.lang = CloudLocalization.currentLanguage.code;
 
-        if (CloudLocalization.direction === LanguageDirection.rtl)
+        if (CloudLocalization.direction === LanguageDirection.rtl) {
             document.documentElement.dir = 'rtl';
-        else document.documentElement.removeAttribute('dir');
+            if (!this._settings.preventLayoutChangeForRTL) {
+                let styleSheet: StyleSheet;
 
-        let styleSheet: StyleSheet;
-
-        Array.from(document.styleSheets).forEach((sheet) => {
-            try {
-                Array.from(sheet['cssRules'] || sheet['rules']).forEach((rule) => {
-
-                    if (rule.cssText === 'html[dir="rtl"] { direction: rtl; }')
-                        styleSheet = sheet;
+                Array.from(document.styleSheets).forEach((sheet) => {
+                    try {
+                        Array.from(sheet['cssRules'] || sheet['rules']).forEach((rule) => {
+                            if (rule.cssText === 'html[dir="rtl"] { direction: rtl; }')
+                                styleSheet = sheet;
+                        });
+                    } catch (e) { }
                 });
-            } catch (e) { }
-        });
 
-        if (CloudLocalization.direction === LanguageDirection.rtl && styleSheet === undefined)
-            CloudLocalization.addRTLCSS();
+                if (styleSheet === undefined)
+                    CloudLocalization.addRTLCSS();
+            }
+        } else {
+            document.documentElement.removeAttribute('dir');
+        }
 
         const allElements = Array.from(document.querySelectorAll('*'));
         const nonTranslatedElements = new Set(CloudLocalization.nonTranslatedElements

@@ -9,6 +9,7 @@ export interface CloudLocalizationSettings {
     translatorProviderKey?: string;
     urlLanguageLocation?: UrlLanguageLocation;
     useDefaultLanguageAlways?: boolean;
+    preventLayoutChangeForRTL?: boolean;
 
     languages: Language[];
     restartOnLanguageChange?: boolean;
